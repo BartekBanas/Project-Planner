@@ -298,3 +298,4 @@ const TableWithInfo = ({ eventForm, method }) => {
     );
 };
 export default TableWithInfo;
+export { default } from './table.tsx';
