@@ -67,7 +67,9 @@ const DynamicTable: React.FC<DynamicTableProps> = ({ eventFormMP }) => {
         return (
           <Space>
             Dostawca {record.key} ({text})
-            <DeleteTwoTone onClick={() => handleDeleteRow(record.key)} />
+            <span onClick={() => handleDeleteRow(record.key)} style={{ cursor: 'pointer' }}>
+              {React.createElement(DeleteTwoTone as any)}
+            </span>
           </Space>
         );
       },
@@ -106,7 +108,9 @@ const DynamicTable: React.FC<DynamicTableProps> = ({ eventFormMP }) => {
             return (
               <Space>
                 Odbiorca {id} ({demand})
-                <DeleteTwoTone onClick={() => handleDeleteCol(dataIndex)} />
+                <span onClick={() => handleDeleteCol(dataIndex)} style={{ cursor: 'pointer' }}>
+                  {React.createElement(DeleteTwoTone as any)}
+                </span>
               </Space>
             );
           },

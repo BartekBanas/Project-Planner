@@ -10,16 +10,16 @@ const AppHeader: React.FC = () => {
         <Space wrap size={16}>
           <Avatar size={120} src={<img src={logo} className="App-logo" alt="logo" />} />
           <Tooltip title="Bartłomiej Burda" placement="bottom" color={'#1890ff'}>
-            <Avatar size={80}><UserOutlined /></Avatar>
+            <Avatar size={80} icon={React.createElement(UserOutlined as any)} />
           </Tooltip>
           <Tooltip title="Bartłomiej Banaś" placement="bottom" color={'#1890ff'}>
-            <Avatar size={80}><UserOutlined /></Avatar>
+            <Avatar size={80} icon={React.createElement(UserOutlined as any)} />
           </Tooltip>
           <Tooltip title="Dawid Chmielowiec" placement="bottom" color={'#1890ff'}>
-            <Avatar size={80}><UserOutlined /></Avatar>
+            <Avatar size={80} icon={React.createElement(UserOutlined as any)} />
           </Tooltip>
           <Tooltip title="Damian Błażowski" placement="bottom" color={'#1890ff'}>
-            <Avatar size={80}><UserOutlined /></Avatar>
+            <Avatar size={80} icon={React.createElement(UserOutlined as any)} />
           </Tooltip>
         </Space>
       </Space>

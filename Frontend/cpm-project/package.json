@@ -24,11 +24,11 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "typescript": "^5.2.2",
-    "@types/react": "^18.2.21",
-    "@types/react-dom": "^18.2.7",
-    "@types/node": "^20.5.1",
-    "@types/jest": "^29.5.4"
+    "@types/jest": "^29.5.4",
+    "@types/node": "^20.19.27",
+    "@types/react": "^18.3.27",
+    "@types/react-dom": "^18.3.7",
+    "typescript": "^5.9.3"
   },
   "eslintConfig": {
     "extends": [

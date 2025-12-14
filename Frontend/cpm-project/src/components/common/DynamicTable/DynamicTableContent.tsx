@@ -7,9 +7,11 @@ type DynamicTableContentProps = {
   dataSource: any[];
   columns: any[];
   handleCellSave?: (row: any) => void;
+  handleAddRow?: () => void;
+  handleAddCol?: () => void;
 };
 
-const DynamicTableContent: React.FC<DynamicTableContentProps> = ({ dataSource, columns, handleCellSave }) => {
+const DynamicTableContent: React.FC<DynamicTableContentProps> = ({ dataSource, columns, handleCellSave, handleAddRow, handleAddCol }) => {
   const components = {
     body: {
       row: EditableRow,
@@ -59,4 +61,3 @@ const DynamicTableContent: React.FC<DynamicTableContentProps> = ({ dataSource, c
 };
 
 export default DynamicTableContent;
-
