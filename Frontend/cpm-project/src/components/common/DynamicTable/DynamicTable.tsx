@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button, Space, Drawer, notification, Radio, Card } from 'antd';
 import { DeleteTwoTone } from '@ant-design/icons';
 import { isEmpty } from 'lodash';
@@ -10,20 +10,24 @@ import FinalTable from '../finalTable';
 
 const newColumnProps = {
   title: '',
-  dataIndex: "new",
+  dataIndex: 'new',
   width: 170,
-  editable: true
+  editable: true,
 };
 
-const DynamicTable = ({ eventFormMP }) => {
-  const [dataSource, setDataSource] = useState([]);
-  const [dataSourceS, setDataSourceS] = useState([]);
-  const [dataSourceD, setDataSourceD] = useState([]);
-  const [count, setCount] = useState(null);
-  const [open, setOpen] = useState(false);
-  const [currency, setCurrency] = useState('PLN');
+type DynamicTableProps = {
+  eventFormMP: any;
+};
 
-  const [receivedData, setReceivedData] = useState({});
+const DynamicTable: React.FC<DynamicTableProps> = ({ eventFormMP }) => {
+  const [dataSource, setDataSource] = useState<any[]>([]);
+  const [dataSourceS, setDataSourceS] = useState<any[]>([]);
+  const [dataSourceD, setDataSourceD] = useState<any[]>([]);
+  const [count, setCount] = useState<number>(0);
+  const [open, setOpen] = useState<boolean>(false);
+  const [currency, setCurrency] = useState<string>('PLN');
+
+  const [receivedData, setReceivedData] = useState<any>({});
 
   const showDrawer = () => {
     setOpen(true);
@@ -42,47 +46,48 @@ const DynamicTable = ({ eventFormMP }) => {
         return [...dataSourceD, { ...eventFormMP, key: count }];
       });
       handleAddCol();
-    }
-    else {
+    } else {
       setDataSourceS((dataSourceS) => {
         return [...dataSourceS, { ...eventFormMP, key: count }];
       });
       handleAddRow();
     }
-    setCount(count + 1);
+    setCount((c) => c + 1);
   }, [eventFormMP]);
 
-  const [columns, setColumns] = useState([
+  const [columns, setColumns] = useState<any[]>([
     {
-      title: "",
-      dataIndex: "supply",
-      rowScope: "row",
-      align: "center",
+      title: '',
+      dataIndex: 'supply',
+      rowScope: 'row',
+      align: 'center',
       width: 80,
       fixed: 'left',
-      render: (text, record) => {
+      render: (text: any, record: any) => {
         return (
           <Space>
             Dostawca {record.key} ({text})
-            <DeleteTwoTone onClick={() => handleDeleteRow(record.key)} />
+            <span onClick={() => handleDeleteRow(record.key)} style={{ cursor: 'pointer' }}>
+              {React.createElement(DeleteTwoTone as any)}
+            </span>
           </Space>
-        )
-      }
+        );
+      },
     },
     {
-      title: "",
-      dataIndex: "padding"
-    }
+      title: '',
+      dataIndex: 'padding',
+    },
   ]);
 
   const handleAddRow = () => {
     setDataSource((dataSource) => {
       const last = dataSource.slice(-1);
       const newData = {
-        key: ((last[0]?.key || 0) + 1),
-        supply: eventFormMP.supply
-      };
-      return [...dataSource, newData]
+        key: (last[0]?.key || 0) + 1,
+        supply: eventFormMP.supply,
+      } as any;
+      return [...dataSource, newData];
     });
   };
 
@@ -91,7 +96,7 @@ const DynamicTable = ({ eventFormMP }) => {
       const newColumns = [...columns];
       const keepLast = newColumns.pop();
       const last = newColumns.slice(-1);
-      const id = ((last[0]?.key || 0) + 1);
+      const id = (last[0]?.key || 0) + 1;
       const demand = eventFormMP.demand;
       const dataIndex = `dynamic${id}`;
 
@@ -103,19 +108,21 @@ const DynamicTable = ({ eventFormMP }) => {
             return (
               <Space>
                 Odbiorca {id} ({demand})
-                <DeleteTwoTone onClick={() => handleDeleteCol(dataIndex)} />
+                <span onClick={() => handleDeleteCol(dataIndex)} style={{ cursor: 'pointer' }}>
+                  {React.createElement(DeleteTwoTone as any)}
+                </span>
               </Space>
             );
           },
           dataIndex,
-          key: id
+          key: id,
         },
-        keepLast
+        keepLast,
       ];
     });
   };
 
-  const handleCellSave = (row) => {
+  const handleCellSave = (row: any) => {
     setDataSource((dataSource) => {
       const newData = [...dataSource];
       const index = newData.findIndex((item) => row.key === item.key);
@@ -123,29 +130,29 @@ const DynamicTable = ({ eventFormMP }) => {
 
       newData.splice(index, 1, {
         ...item,
-        ...row
+        ...row,
       });
 
       return newData;
     });
   };
 
-  const handleDeleteRow = (key) => {
+  const handleDeleteRow = (key: any) => {
     setDataSource((dataSource) => {
       return [...dataSource].filter((item) => item.key !== key);
     });
   };
 
-  const handleDeleteCol = (dataIndex) => {
+  const handleDeleteCol = (dataIndex: string) => {
     setColumns((columns) => {
       return [...columns].filter((item) => item.dataIndex !== dataIndex);
     });
     setDataSource((dataSource) => {
-      return [...dataSource].map((row) => { delete row[dataIndex]; return row; })
+      return [...dataSource].map((row) => { delete row[dataIndex]; return row; });
     });
   };
 
-  const sendData = (event) => {
+  const sendData = (event: React.FormEvent) => {
     event.preventDefault();
 
     if (isEmpty(dataSource || eventFormMP)) {
@@ -178,12 +185,12 @@ const DynamicTable = ({ eventFormMP }) => {
 
     axios.post('https://localhost:44363/api/TP', { Suppliers, Recipients, TransportCost })
       .then(response => {
-        setReceivedData(response.data)
-        console.log(response.data)
+        setReceivedData(response.data);
+        console.log(response.data);
         showDrawer();
       })
       .catch(error => { });
-  }
+  };
 
   return (
     <h1>
@@ -203,7 +210,6 @@ const DynamicTable = ({ eventFormMP }) => {
       <Drawer
         title="Wyniki"
         size="large"
-        overflow="hidden"
         placement="bottom"
         closable={true}
         onClose={onClose}
@@ -221,4 +227,5 @@ const DynamicTable = ({ eventFormMP }) => {
     </h1 >
   );
 };
-export { DynamicTable as default };
+export default DynamicTable;
+

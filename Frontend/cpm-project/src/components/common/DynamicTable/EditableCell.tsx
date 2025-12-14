@@ -1,8 +1,8 @@
-import { useContext, useRef, useState, useEffect } from 'react';
+import React, { useContext, useRef, useState, useEffect } from 'react';
 import { Form, Input } from 'antd';
-import EditableContext from "./EditableContext";
+import EditableContext from './EditableContext';
 
-const EditableCell = ({
+const EditableCell: React.FC<any> = ({
   title,
   editable,
   children,
@@ -13,19 +13,19 @@ const EditableCell = ({
   ...restProps
 }) => {
   const [editing, setEditing] = useState(false);
-  const inputRef = useRef(null);
-  const form = useContext(EditableContext);
+  const inputRef = useRef<any>(null);
+  const form = useContext<any>(EditableContext);
 
   useEffect(() => {
     if (editing) {
-      inputRef.current.focus();
+      inputRef.current?.focus();
     }
   }, [editing]);
 
   const toggleEdit = () => {
     setEditing(!editing);
     form.setFieldsValue({
-      [dataIndex]: record[dataIndex]
+      [dataIndex]: record[dataIndex],
     });
   };
 
@@ -35,10 +35,10 @@ const EditableCell = ({
       toggleEdit();
       handleSave({
         ...record,
-        ...values
+        ...values,
       });
     } catch (errInfo) {
-      console.log("Save failed:", errInfo);
+      console.log('Save failed:', errInfo);
     }
   };
 
@@ -48,14 +48,14 @@ const EditableCell = ({
     childNode = editing ? (
       <Form.Item
         style={{
-          margin: 0
+          margin: 0,
         }}
         name={dataIndex}
         rules={[
           {
             required: false,
-            message: `${title} is required.`
-          }
+            message: `${title} is required.`,
+          },
         ]}
       >
         <Input ref={inputRef} onPressEnter={save} onBlur={save} />
@@ -64,7 +64,7 @@ const EditableCell = ({
       <div
         className="editable-cell-value-wrap"
         style={{
-          paddingRight: 24
+          paddingRight: 24,
         }}
         onClick={toggleEdit}
       >
@@ -85,3 +85,4 @@ const EditableCell = ({
 };
 
 export default EditableCell;
+

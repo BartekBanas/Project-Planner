@@ -1,5 +1,5 @@
 import './App.css';
-import { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import { Layout, notification } from 'antd';
 import AppHeader from './components/common/header';
 import InformationCard from './components/common/informator';
@@ -23,10 +23,10 @@ axios.interceptors.response.use((response) => {
   return Promise.reject(error);
 });
 
-const App = () => {
-  const [eventForm, setEventForm] = useState({});
-  const [eventFormMP, setEventFormMP] = useState({});
-  const [method, setMethod] = useState('Posrednika'); // default is 'CPM'
+const App: React.FC = () => {
+  const [eventForm, setEventForm] = useState<Record<string, any>>({});
+  const [eventFormMP, setEventFormMP] = useState<Record<string, any>>({});
+  const [method, setMethod] = useState<string>('Posrednika'); // default is 'CPM'
 
   return (
     <Layout className="App">
