@@ -26,19 +26,20 @@ export type TransportResult = {
 export type PartyKind = 'supplier' | 'recipient';
 
 export const partyLabels = {
-  supplier: { name: 'Dostawca', quantity: 'Podaż', price: 'Cena zakupu' },
-  recipient: { name: 'Odbiorca', quantity: 'Popyt', price: 'Cena sprzedaży' },
+  supplier: { name: 'Supplier', quantity: 'Supply', price: 'Purchase price' },
+  recipient: { name: 'Recipient', quantity: 'Demand', price: 'Selling price' },
 };
 
+const englishLocale = 'en-US';
+
 export function formatMoney(amount: number, currency: Currency) {
-  return new Intl.NumberFormat('pl-PL', {
+  return new Intl.NumberFormat(englishLocale, {
     style: 'currency',
-    currencyDisplay: 'narrowSymbol',
     currency,
   }).format(amount);
 }
 
-const quantityFormatter = new Intl.NumberFormat('pl-PL');
+const quantityFormatter = new Intl.NumberFormat(englishLocale);
 
 export function formatQuantity(quantity: number) {
   return quantityFormatter.format(quantity);

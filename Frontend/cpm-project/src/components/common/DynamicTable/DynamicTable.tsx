@@ -56,19 +56,19 @@ function PartyEditor({ disabled, onAdd }: PartyEditorProps) {
   return (
     <form className="panel transport-entry" onSubmit={handleAdd} aria-labelledby="transport-entry-title">
       <div className="panel-header">
-        <h2 className="panel-title" id="transport-entry-title">Dodaj uczestnika</h2>
+        <h2 className="panel-title" id="transport-entry-title">Add a supplier or recipient</h2>
       </div>
       <fieldset className="panel-body transport-entry-fields" disabled={disabled}>
-        <legend className="visually-hidden">Dane uczestnika</legend>
+        <legend className="visually-hidden">Supplier or recipient details</legend>
         <fieldset className="choice-group">
-          <legend className="visually-hidden">Typ uczestnika</legend>
+          <legend className="visually-hidden">Party type</legend>
           <label>
             <input type="radio" name="party-kind" value="supplier" checked={kind === 'supplier'} onChange={() => setKind('supplier')} />
-            <span>Dostawca</span>
+            <span>{partyLabels.supplier.name}</span>
           </label>
           <label>
             <input type="radio" name="party-kind" value="recipient" checked={kind === 'recipient'} onChange={() => setKind('recipient')} />
-            <span>Odbiorca</span>
+            <span>{partyLabels.recipient.name}</span>
           </label>
         </fieldset>
         <div className="form-grid transport-quantity-price">
@@ -91,9 +91,9 @@ function PartyEditor({ disabled, onAdd }: PartyEditorProps) {
             />
           </label>
         </div>
-        {priceError && <p className="inline-error" id="transport-price-error" role="alert">Podaj cenę większą od zera.</p>}
+        {priceError && <p className="inline-error" id="transport-price-error" role="alert">Enter a price greater than zero.</p>}
         <button className="button button-primary" type="submit">
-          <Icon name="plus" /> {kind === 'supplier' ? 'Dodaj dostawcę' : 'Dodaj odbiorcę'}
+          <Icon name="plus" /> Add {kind}
         </button>
       </fieldset>
     </form>
@@ -112,7 +112,7 @@ export default function DynamicTable() {
   const { suppliers, recipients } = draft;
   const hasRoutes = suppliers.length > 0 && recipients.length > 0;
   const isEmpty = suppliers.length === 0 && recipients.length === 0;
-  const missingParty = suppliers.length === 0 ? 'dostawcę' : 'odbiorcę';
+  const missingParty = suppliers.length === 0 ? 'supplier' : 'recipient';
 
   useEffect(() => () => pendingRequest.current?.abort(), []);
   useEffect(() => { if (result) resultHeading.current?.focus(); }, [result]);
@@ -177,8 +177,8 @@ export default function DynamicTable() {
 
       const reply = axios.isAxiosError<unknown>(requestError) ? requestError.response : undefined;
       setError(reply?.status === 400
-        ? getValidationMessage(reply.data) ?? 'Sprawdź podaż, popyt i koszty wszystkich tras.'
-        : 'Nie udało się obliczyć planu. Sprawdź połączenie z serwerem i spróbuj ponownie.');
+        ? getValidationMessage(reply.data) ?? 'Check the supply, demand, and costs for all routes.'
+        : 'Could not calculate the plan. Check the server connection and try again.');
     } finally {
       pendingRequest.current = null;
       if (!controller.signal.aborted) setSolving(false);
@@ -190,10 +190,10 @@ export default function DynamicTable() {
       <div className="transport-main">
         <form className="panel transport-matrix" aria-labelledby="transport-matrix-title" onSubmit={solve}>
           <div className="panel-header transport-panel-heading">
-            <h2 className="panel-title" id="transport-matrix-title">Koszty transportu</h2>
+            <h2 className="panel-title" id="transport-matrix-title">Transport costs</h2>
             <div className="transport-counts muted" aria-live="polite">
-              <span>Dostawcy <strong>{suppliers.length}</strong></span>
-              <span>Odbiorcy <strong>{recipients.length}</strong></span>
+              <span>Suppliers <strong>{suppliers.length}</strong></span>
+              <span>Recipients <strong>{recipients.length}</strong></span>
             </div>
           </div>
           {hasRoutes ? (
@@ -208,29 +208,29 @@ export default function DynamicTable() {
             <>
               <div className="empty-state transport-empty">
                 <span className="transport-empty-icon" aria-hidden="true"><Icon name="table" size={18} /></span>
-                <h3>{isEmpty ? 'Brak tras transportu' : `Dodaj ${missingParty}`}</h3>
+                <h3>{isEmpty ? 'No routes yet' : `Add a ${missingParty}`}</h3>
                 <p className="muted">{isEmpty
-                  ? 'Dodaj dostawcę i odbiorcę, aby wprowadzić koszty tras.'
-                  : 'Macierz kosztów pojawi się po uzupełnieniu obu stron.'}</p>
+                  ? 'Add a supplier and a recipient to enter route costs.'
+                  : 'The cost matrix appears once you have both a supplier and a recipient.'}</p>
               </div>
               {!isEmpty && <PartialMatrix draft={draft} currency={currency} onRemove={removeParty} />}
             </>
           )}
           <div className="panel-footer transport-matrix-footer">
-            {hasRoutes && <p className="muted">Wpisz jednostkowy koszt każdej trasy</p>}
+            {hasRoutes && <p className="muted">Enter the cost per unit for each route</p>}
             <button className="button button-primary" type="submit" disabled={!hasRoutes || solving}>
-              {solving ? 'Obliczanie…' : 'Oblicz plan'}
+              {solving ? 'Calculating…' : 'Calculate plan'}
             </button>
           </div>
           {error && <p className="inline-error transport-solve-error" role="alert">{error}</p>}
         </form>
         {result && <FinalTable draft={draft} result={result} currency={currency} headingRef={resultHeading} />}
       </div>
-      <aside className="transport-editor" aria-label="Ustawienia transportu">
+      <aside className="transport-editor" aria-label="Transport settings">
         <PartyEditor onAdd={addParty} disabled={solving} />
         <section className="panel">
           <div className="panel-header">
-            <h2 className="panel-title" id="transport-currency-title">Waluta</h2>
+            <h2 className="panel-title" id="transport-currency-title">Currency</h2>
           </div>
           <div className="panel-body">
             <fieldset className="choice-group" aria-labelledby="transport-currency-title">

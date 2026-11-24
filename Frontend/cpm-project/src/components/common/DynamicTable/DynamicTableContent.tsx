@@ -26,7 +26,7 @@ export function PartyLabel({ party, kind, currency, onRemove, disabled }: PartyL
         <button
           type="button"
           className="button button-icon transport-remove"
-          aria-label={`Usuń ${kind === 'supplier' ? 'dostawcę' : 'odbiorcę'} ${party.id}`}
+          aria-label={`Remove ${kind} ${party.id}`}
           onClick={() => onRemove(kind, party.id)}
           disabled={disabled}
         >
@@ -68,11 +68,11 @@ export default function DynamicTableContent({ draft, currency, onRemove, disable
   const { suppliers, recipients } = draft;
 
   return (
-    <div className="table-scroll" tabIndex={0} role="region" aria-label="Macierz kosztów transportu">
+    <div className="table-scroll" tabIndex={0} role="region" aria-label="Transport cost matrix">
       <table className="data-table transport-table">
         <thead>
           <tr>
-            <th scope="col">Trasy</th>
+            <th scope="col">Routes</th>
             {recipients.map((recipient) => (
               <th scope="col" key={recipient.id}>
                 <PartyLabel party={recipient} kind="recipient" currency={currency} onRemove={onRemove} disabled={disabled} />
@@ -91,7 +91,7 @@ export default function DynamicTableContent({ draft, currency, onRemove, disable
                   <input
                     className="transport-cost"
                     type="number"
-                    aria-label={`Koszt trasy od dostawcy ${supplier.id} do odbiorcy ${id}`}
+                    aria-label={`Route cost from supplier ${supplier.id} to recipient ${id}`}
                     placeholder="—"
                     inputMode="decimal"
                     min="0"

@@ -11,15 +11,15 @@ type FinalTableProps = {
 
 export default function FinalTable({ draft, result, currency, headingRef }: FinalTableProps) {
   const totals = [
-    ['Zysk', result.totalProfit],
-    ['Koszt całkowity', result.totalCost],
-    ['Przychód', result.totalRevenue],
+    ['Profit', result.totalProfit],
+    ['Total cost', result.totalCost],
+    ['Revenue', result.totalRevenue],
   ] as const;
 
   return (
     <section className="panel transport-result" aria-labelledby="transport-result-title">
       <div className="panel-header">
-        <h2 className="panel-title" id="transport-result-title" ref={headingRef} tabIndex={-1}>Plan transportu</h2>
+        <h2 className="panel-title" id="transport-result-title" ref={headingRef} tabIndex={-1}>Transport results</h2>
       </div>
       <dl className="transport-totals">
         {totals.map(([label, amount]) => (
@@ -29,11 +29,11 @@ export default function FinalTable({ draft, result, currency, headingRef }: Fina
           </div>
         ))}
       </dl>
-      <div className="table-scroll" tabIndex={0} role="region" aria-label="Ilość i zysk na każdej trasie">
+      <div className="table-scroll" tabIndex={0} role="region" aria-label="Quantity and profit by route">
         <table className="data-table transport-table">
           <thead>
             <tr>
-              <th scope="col">Trasy</th>
+              <th scope="col">Routes</th>
               {draft.recipients.map((recipient) => (
                 <th key={recipient.id} scope="col"><PartyLabel party={recipient} kind="recipient" currency={currency} /></th>
               ))}
@@ -46,7 +46,7 @@ export default function FinalTable({ draft, result, currency, headingRef }: Fina
                 {draft.recipients.map(({ id }, column) => (
                   <td key={id}>
                     <strong className="transport-route-quantity">{formatQuantity(result.transportationTable[row][column])}</strong>
-                    <span className="visually-hidden"> jednostek, zysk </span>
+                    <span className="visually-hidden"> units, profit </span>
                     <span className="transport-route-profit muted">{formatMoney(result.profitTable[row][column], currency)}</span>
                   </td>
                 ))}
@@ -55,7 +55,7 @@ export default function FinalTable({ draft, result, currency, headingRef }: Fina
           </tbody>
         </table>
       </div>
-      <div className="panel-footer muted">Ilość i zysk na każdej trasie</div>
+      <div className="panel-footer muted">Quantity and profit by route</div>
     </section>
   );
 }

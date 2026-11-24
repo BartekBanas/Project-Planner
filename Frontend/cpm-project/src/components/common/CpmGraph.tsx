@@ -97,7 +97,7 @@ const arrowKeys: Record<string, Point> = {
   ArrowDown: { x: 0, y: 12 },
 };
 
-export default function CPMDiagram({ solution }: { solution: CpmSolution }) {
+export default function CpmGraph({ solution }: { solution: CpmSolution }) {
   const layout = useMemo(() => buildLayout(solution), [solution]);
   const diagramId = useId();
   const svg = useRef<SVGSVGElement>(null);
@@ -162,14 +162,14 @@ export default function CPMDiagram({ solution }: { solution: CpmSolution }) {
     <figure className="cpm-diagram">
       <figcaption className="cpm-diagram-caption">
         <div className="cpm-diagram-legend">
-          <span><i aria-hidden="true" /> Ścieżka krytyczna</span>
-          <span><i aria-hidden="true" /> Pozostałe czynności</span>
+          <span><i aria-hidden="true" /> Critical path</span>
+          <span><i aria-hidden="true" /> Other activities</span>
         </div>
         {Object.keys(positions).length > 0 && (
-          <button className="button" type="button" onClick={() => setPositions({})}>Przywróć układ</button>
+          <button className="button" type="button" onClick={() => setPositions({})}>Reset layout</button>
         )}
       </figcaption>
-      <div className="cpm-diagram-scroll" role="region" tabIndex={0} aria-label="Graf zależności">
+      <div className="cpm-diagram-scroll" role="region" tabIndex={0} aria-label="Dependency graph">
         <svg
           ref={svg}
           width={layout.width}
@@ -178,8 +178,8 @@ export default function CPMDiagram({ solution }: { solution: CpmSolution }) {
           aria-labelledby={`${diagramId}-title`}
           aria-describedby={`${diagramId}-description`}
         >
-          <title id={`${diagramId}-title`}>Graf zależności między zdarzeniami</title>
-          <desc id={`${diagramId}-description`}>Przeciągnij zdarzenie, aby je przesunąć, lub wybierz je i użyj klawiszy strzałek.</desc>
+          <title id={`${diagramId}-title`}>Event dependency graph</title>
+          <desc id={`${diagramId}-description`}>To move an event, drag it or select it and use the arrow keys.</desc>
           <defs>
             <marker id={arrowId} viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto" markerUnits="userSpaceOnUse">
               <path d="M 0 0 L 10 5 L 0 10 Z" className="cpm-edge-arrow" />
@@ -217,7 +217,7 @@ export default function CPMDiagram({ solution }: { solution: CpmSolution }) {
               transform={`translate(${node.x}, ${node.y})`}
               tabIndex={0}
               role="group"
-              aria-label={`Zdarzenie ${node.id}, najwcześniej ${node.earliestTime}, najpóźniej ${node.latestTime}, rezerwa ${node.timeReserve}`}
+              aria-label={`Event ${node.id}, earliest time ${node.earliestTime}, latest time ${node.latestTime}, float ${node.timeReserve}`}
               data-selected={selectedNode?.id === node.id}
               onFocus={() => setSelectedId(node.id)}
               onPointerDown={(event) => startDrag(event, node)}
@@ -225,7 +225,7 @@ export default function CPMDiagram({ solution }: { solution: CpmSolution }) {
               onLostPointerCapture={() => { drag.current = null; }}
               onKeyDown={(event) => moveWithKeyboard(event, node)}
             >
-              <title>Zdarzenie {node.id} · {node.earliestTime}–{node.latestTime}</title>
+              <title>Event {node.id} · {node.earliestTime}–{node.latestTime}</title>
               <ellipse rx={node.radiusX} ry={nodeRadiusY} />
               <text textAnchor="middle" dominantBaseline="central" aria-hidden="true">{node.id}</text>
             </g>
@@ -233,11 +233,11 @@ export default function CPMDiagram({ solution }: { solution: CpmSolution }) {
         </svg>
       </div>
       {selectedNode && (
-        <dl className="cpm-node-details" aria-label="Terminy wybranego zdarzenia">
-          <div><dt>Zdarzenie</dt><dd>{selectedNode.id}</dd></div>
-          <div><dt>Najwcześniej</dt><dd>{selectedNode.earliestTime}</dd></div>
-          <div><dt>Najpóźniej</dt><dd>{selectedNode.latestTime}</dd></div>
-          <div><dt>Rezerwa</dt><dd>{selectedNode.timeReserve}</dd></div>
+        <dl className="cpm-node-details" aria-label="Selected event timing">
+          <div><dt>Event</dt><dd>{selectedNode.id}</dd></div>
+          <div><dt>Earliest time</dt><dd>{selectedNode.earliestTime}</dd></div>
+          <div><dt>Latest time</dt><dd>{selectedNode.latestTime}</dd></div>
+          <div><dt>Float</dt><dd>{selectedNode.timeReserve}</dd></div>
         </dl>
       )}
     </figure>

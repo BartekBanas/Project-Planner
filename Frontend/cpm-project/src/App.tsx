@@ -6,14 +6,14 @@ import CpmWorkspace from './components/common/table';
 
 const methods = {
   transport: {
-    label: 'Metoda pośrednika',
-    title: 'Plan transportu',
-    description: 'Oblicz opłacalny plan dostaw na podstawie podaży, popytu i kosztów przewozu.',
+    label: 'Transport',
+    title: 'Transport plan',
+    description: 'Calculate a shipping plan based on supply, demand, and route costs.',
   },
   cpm: {
-    label: 'Metoda CPM',
-    title: 'Ścieżka krytyczna',
-    description: 'Wyznacz czas realizacji projektu i znajdź zadania, które decydują o jego terminie.',
+    label: 'CPM',
+    title: 'Critical path',
+    description: 'Calculate the project duration and identify the activities that determine its finish time.',
   },
 } as const;
 
@@ -35,7 +35,7 @@ export default function App() {
           </div>
 
           <fieldset className="choice-group method-picker">
-            <legend className="visually-hidden">Metoda obliczeń</legend>
+            <legend className="visually-hidden">Planning method</legend>
             {methodOptions.map((option) => (
               <label key={option}>
                 <input
@@ -69,7 +69,7 @@ export default function App() {
       <footer className="app-footer">
         <div className="app-width app-footer-inner">
           <details className="app-credits">
-            <summary>Autorzy</summary>
+            <summary>Contributors</summary>
             <ul>
               <li>Bartłomiej Burda</li>
               <li>Bartłomiej Banaś</li>
