@@ -1,181 +1,232 @@
-import React, { useRef, useEffect } from 'react';
-import * as d3 from 'd3';
+import { KeyboardEvent, PointerEvent, useId, useMemo, useRef, useState } from 'react';
+import { CpmEvent, CpmSolution } from './cpmTypes';
 
-type CPMDiagramProps = {
-  receivedData: any;
+type Point = { x: number; y: number };
+type GraphNode = CpmEvent & Point & { rank: number; radiusX: number };
+type Drag = { id: number; origin: Point; node: Point };
+type EventLinks = { targets: number[]; remaining: number; rank: number };
+
+const nodeRadiusY = 22;
+const graphPadding = 76;
+const columnWidth = 216;
+const rowHeight = 108;
+
+function buildLayout({ events, activities }: CpmSolution) {
+  const successors = new Map<number, EventLinks>(events.map(({ id }) => [id, { targets: [], remaining: 0, rank: 0 }]));
+
+  for (const { sequence: [source, target] } of activities) {
+    const from = successors.get(source);
+    const to = successors.get(target);
+    if (from && to) {
+      from.targets.push(target);
+      to.remaining += 1;
+    }
+  }
+
+  const ready = events.filter(({ id }) => successors.get(id)?.remaining === 0).map(({ id }) => id);
+  for (let index = 0; index < ready.length; index += 1) {
+    const from = successors.get(ready[index]);
+    if (!from) continue;
+    for (const target of from.targets) {
+      const to = successors.get(target);
+      if (to) {
+        to.rank = Math.max(to.rank, from.rank + 1);
+        to.remaining -= 1;
+        if (to.remaining === 0) {
+          ready.push(target);
+        }
+      }
+    }
+  }
+
+  const columns = new Map<number, CpmEvent[]>();
+  for (const event of [...events].sort((left, right) => left.id - right.id)) {
+    const rank = successors.get(event.id)?.rank ?? 0;
+    const column = columns.get(rank) ?? [];
+    column.push(event);
+    columns.set(rank, column);
+  }
+
+  const finalRank = Math.max(0, ...columns.keys());
+  const maxRows = Math.max(1, ...Array.from(columns.values(), (column) => column.length));
+  const width = Math.max(560, finalRank * columnWidth + graphPadding * 2);
+  const height = Math.max(256, (maxRows - 1) * rowHeight + graphPadding * 2);
+  const step = (width - graphPadding * 2) / Math.max(1, finalRank);
+  const nodes: GraphNode[] = [];
+
+  for (const [rank, column] of columns) {
+    column.forEach((event, row) => nodes.push({
+      ...event,
+      rank,
+      x: finalRank ? graphPadding + rank * step : width / 2,
+      y: height / 2 + (row - (column.length - 1) / 2) * rowHeight,
+      radiusX: Math.max(22, String(event.id).length * 4 + 8),
+    }));
+  }
+
+  return { height, nodes, width };
+}
+
+function edgePath(source: GraphNode, target: GraphNode) {
+  const dx = target.x - source.x;
+  const dy = target.y - source.y;
+  const length = Math.hypot(dx, dy) || 1;
+  const unitX = dx / length;
+  const unitY = dy / length;
+  const sourceRadius = 1 / (Math.hypot(unitX / source.radiusX, unitY / nodeRadiusY) || 1);
+  const targetRadius = 1 / (Math.hypot(unitX / target.radiusX, unitY / nodeRadiusY) || 1) + 5;
+  const startX = source.x + unitX * sourceRadius;
+  const startY = source.y + unitY * sourceRadius;
+  const endX = target.x - unitX * targetRadius;
+  const endY = target.y - unitY * targetRadius;
+  const curve = (endX - startX) * 0.38;
+  const lift = target.rank - source.rank > 1 ? 52 : 0;
+  const controlY = [startY - lift, endY - lift];
+
+  return {
+    path: `M ${startX} ${startY} C ${startX + curve} ${controlY[0]}, ${endX - curve} ${controlY[1]}, ${endX} ${endY}`,
+    labelX: (startX + endX) / 2,
+    labelY: (startY + endY) / 2 - lift * 0.75 - 12,
+  };
+}
+
+const arrowKeys: Record<string, Point> = {
+  ArrowLeft: { x: -12, y: 0 },
+  ArrowRight: { x: 12, y: 0 },
+  ArrowUp: { x: 0, y: -12 },
+  ArrowDown: { x: 0, y: 12 },
 };
 
-const CPMDiagram: React.FC<CPMDiagramProps> = ({ receivedData }) => {
-  const svgRef = useRef<SVGSVGElement | null>(null);
-  const width = 1460;
-  const height = 620;
+export default function CPMDiagram({ solution }: { solution: CpmSolution }) {
+  const layout = useMemo(() => buildLayout(solution), [solution]);
+  const diagramId = useId();
+  const svg = useRef<SVGSVGElement>(null);
+  const drag = useRef<Drag | null>(null);
+  const [positions, setPositions] = useState<Record<number, Point>>({});
+  const nodes = layout.nodes.map((node) => ({ ...node, ...positions[node.id] }));
+  const byId = new Map(nodes.map((node) => [node.id, node]));
+  const arrows = solution.activities.flatMap((activity) => {
+    const source = byId.get(activity.sequence[0]);
+    const target = byId.get(activity.sequence[1]);
+    return source && target ? [{ ...edgePath(source, target), activity }] : [];
+  });
+  const arrowId = `${diagramId}-arrow`;
+  const criticalArrowId = `${diagramId}-critical-arrow`;
 
-  // defensive checks
-  const events = receivedData?.events || [];
-  const activities = receivedData?.activities || [];
+  function svgPoint(event: PointerEvent<SVGGElement>) {
+    const transform = svg.current?.getScreenCTM();
+    return transform && new DOMPoint(event.clientX, event.clientY).matrixTransform(transform.inverse());
+  }
 
-  useEffect(() => {
-    const nodes: any[] = [];
-    const links: any[] = [];
+  function placeNode(id: number, point: Point) {
+    setPositions((current) => ({
+      ...current,
+      [id]: {
+        x: Math.max(56, Math.min(layout.width - 56, point.x)),
+        y: Math.max(32, Math.min(layout.height - 32, point.y)),
+      },
+    }));
+  }
 
-    events.forEach((event: any) => {
-      nodes.push({ id: event.id });
-    });
+  function startDrag(event: PointerEvent<SVGGElement>, node: GraphNode) {
+    const origin = svgPoint(event);
+    if (event.button === 0 && origin) {
+      drag.current = { id: node.id, origin, node };
+      event.currentTarget.setPointerCapture(event.pointerId);
+    }
+  }
 
-    activities.forEach((activity: any) => {
-      links.push({
-        source: activity.sequence[0],
-        target: activity.sequence[1],
-        label: activity.taskName,
-        duration: activity.duration,
-        reserve: activity.timeReserve,
-        earliestStart: activity.earlyStart,
-        earliestFinish: activity.earlFinish,
-        latestStart: activity.lateStart,
-        latestFinish: activity.lateFinish,
-        criticalPath: activity.critical,
+  function moveDrag(event: PointerEvent<SVGGElement>, id: number) {
+    const currentDrag = drag.current;
+    if (currentDrag?.id !== id) return;
+    const point = svgPoint(event);
+    if (point) {
+      placeNode(id, {
+        x: currentDrag.node.x + point.x - currentDrag.origin.x,
+        y: currentDrag.node.y + point.y - currentDrag.origin.y,
       });
-    });
-
-    const simulation = d3.forceSimulation(nodes as any)
-      .force('link', d3.forceLink(links as any).id((d: any) => d.id).distance(50))
-      .force('charge', d3.forceManyBody().strength(-1000))
-      .force('center', d3.forceCenter(width / 2, height / 2));
-
-    function dragstarted(event: any, d: any) {
-      if (!event.active) simulation.alphaTarget(0.3).restart();
-      d.fx = d.x;
-      d.fy = d.y;
     }
+  }
 
-    function dragged(event: any, d: any) {
-      d.fx = event.x;
-      d.fy = event.y;
-    }
-
-    function dragended(event: any, d: any) {
-      if (!event.active) simulation.alphaTarget(0);
-      d.fx = d.x;
-      d.fy = d.y;
-    }
-
-    const svg = d3.select(svgRef.current as any)
-      .attr('width', width)
-      .attr('height', height);
-
-    const link = svg.append('g')
-      .attr('class', 'links')
-      .selectAll('line')
-      .data(links)
-      .enter()
-      .append('line')
-      .attr('stroke', function (d: any) {
-        return d.criticalPath === true ? 'red' : 'black';
-      })
-      .attr('stroke-width', 2);
-
-    const linkText = svg.append('g')
-      .attr('class', 'link-labels')
-      .selectAll('text')
-      .data(links)
-      .enter()
-      .append('text')
-      .style('font-size', '12px')
-      .attr('text-anchor', 'top')
-      .attr('alignment-baseline', 'middle')
-      .attr('x', (d: any) => (d.source.x + d.target.x) / 2)
-      .attr('y', (d: any) => (d.source.y + d.target.y) / 2);
-
-    const node = svg.append('g')
-      .attr('class', 'nodes')
-      .selectAll('circle')
-      .data(nodes)
-      .enter()
-      .append('circle')
-      .attr('r', 20)
-      .attr('fill', 'lightblue')
-      .call(
-        d3
-          .drag()
-          .on('start', dragstarted)
-          .on('drag', dragged)
-          .on('end', dragended)
-      );
-
-    const labels = svg.selectAll('.labels')
-      .data(nodes)
-      .enter()
-      .append('text')
-      .attr('class', 'label')
-      .attr('text-anchor', 'middle')
-      .attr('alignment-baseline', 'middle')
-      .text((d: any) => d.id)
-      .style('font-size', '14px')
-      .style('fill', 'black');
-
-    simulation.on('tick', () => {
-      link
-        .attr('x1', (d: any) => d.source.x)
-        .attr('y1', (d: any) => d.source.y)
-        .attr('x2', (d: any) => d.target.x)
-        .attr('y2', (d: any) => d.target.y);
-
-      linkText
-        .attr('x', (d: any) => (d.source.x + d.target.x) / 2)
-        .attr('y', (d: any) => (d.source.y + d.target.y) / 2)
-        .text('').append('svg:tspan')
-        .attr('dy', 5)
-        .text((d: any) => {
-          const label = d.label;
-          const earliestStart = d.earliestStart;
-          const earliestFinish = d.earliestFinish;
-          return `${label} [${earliestStart}, ${earliestFinish}]`;
-        })
-        .append('svg:tspan')
-        .attr('dx', -32)
-        .attr('dy', 15)
-        .text((d: any) => {
-          const latestStart = d.latestStart;
-          const latestFinish = d.latestFinish;
-
-          return `[${latestStart}, ${latestFinish}]`;
-        })
-        .append('svg:tspan')
-        .attr('dx', -50)
-        .attr('dy', 15)
-        .text((d: any) => {
-          const reserve = d.reserve;
-          return `rezerwa=${reserve}`;
-        })
-        .append('svg:tspan')
-        .attr('dx', -40)
-        .attr('dy', 20)
-        .text((d: any) => {
-          const duration = d.duration;
-          return `${duration}`;
-        });
-
-      node
-        .attr('cx', (d: any) => d.x)
-        .attr('cy', (d: any) => d.y);
-
-      labels
-        .attr('x', (d: any) => d.x)
-        .attr('y', (d: any) => d.y);
-    });
-
-    // cleanup on unmount
-    return () => {
-      svg.selectAll('*').remove();
-      simulation.stop();
-    };
-
-  }, [events, activities]);
+  function moveWithKeyboard(event: KeyboardEvent<SVGGElement>, node: GraphNode) {
+    const offset = arrowKeys[event.key];
+    if (!offset) return;
+    event.preventDefault();
+    placeNode(node.id, { x: node.x + offset.x, y: node.y + offset.y });
+  }
 
   return (
-    <svg ref={svgRef}></svg>
+    <figure className="cpm-diagram">
+      <figcaption className="cpm-diagram-caption">
+        <div className="cpm-diagram-legend">
+          <span><i aria-hidden="true" /> Ścieżka krytyczna</span>
+          <span><i aria-hidden="true" /> Pozostałe czynności</span>
+        </div>
+        {Object.keys(positions).length > 0 && (
+          <button className="button" type="button" onClick={() => setPositions({})}>Przywróć układ</button>
+        )}
+      </figcaption>
+      <div className="cpm-diagram-scroll" role="region" tabIndex={0} aria-label="Graf zależności">
+        <svg
+          ref={svg}
+          width={layout.width}
+          height={layout.height}
+          viewBox={`0 0 ${layout.width} ${layout.height}`}
+          aria-labelledby={`${diagramId}-title`}
+          aria-describedby={`${diagramId}-description`}
+        >
+          <title id={`${diagramId}-title`}>Graf zależności między zdarzeniami</title>
+          <desc id={`${diagramId}-description`}>Przeciągnij zdarzenie, aby je przesunąć, lub wybierz je i użyj klawiszy strzałek.</desc>
+          <defs>
+            <marker id={arrowId} viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto" markerUnits="userSpaceOnUse">
+              <path d="M 0 0 L 10 5 L 0 10 Z" className="cpm-edge-arrow" />
+            </marker>
+            <marker id={criticalArrowId} viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto" markerUnits="userSpaceOnUse">
+              <path d="M 0 0 L 10 5 L 0 10 Z" className="cpm-edge-arrow cpm-edge-arrow-critical" />
+            </marker>
+          </defs>
+          <g aria-hidden="true">
+            {arrows.map(({ path, activity }) => (
+              <path
+                key={activity.id}
+                className={activity.critical ? 'cpm-edge cpm-edge-critical' : 'cpm-edge'}
+                d={path}
+                markerEnd={`url(#${activity.critical ? criticalArrowId : arrowId})`}
+              />
+            ))}
+            {arrows.map(({ labelX, labelY, activity }) => (
+              <text
+                key={activity.id}
+                className={activity.critical ? 'cpm-edge-label cpm-edge-label-critical' : 'cpm-edge-label'}
+                x={labelX}
+                y={labelY}
+                textAnchor="middle"
+              >
+                <title>{activity.taskName} · {activity.duration}</title>
+                {activity.taskName.length > 20 ? `${activity.taskName.slice(0, 19)}…` : activity.taskName} · {activity.duration}
+              </text>
+            ))}
+          </g>
+          {nodes.map((node) => (
+            <g
+              key={node.id}
+              className={node.timeReserve === 0 ? 'cpm-graph-node cpm-graph-node-critical' : 'cpm-graph-node'}
+              transform={`translate(${node.x}, ${node.y})`}
+              tabIndex={0}
+              role="group"
+              aria-label={`Zdarzenie ${node.id}, najwcześniej ${node.earliestTime}, najpóźniej ${node.latestTime}, rezerwa ${node.timeReserve}`}
+              onPointerDown={(event) => startDrag(event, node)}
+              onPointerMove={(event) => moveDrag(event, node.id)}
+              onLostPointerCapture={() => { drag.current = null; }}
+              onKeyDown={(event) => moveWithKeyboard(event, node)}
+            >
+              <title>Zdarzenie {node.id} · {node.earliestTime}–{node.latestTime}</title>
+              <ellipse rx={node.radiusX} ry={nodeRadiusY} />
+              <text textAnchor="middle" dominantBaseline="central" aria-hidden="true">{node.id}</text>
+            </g>
+          ))}
+        </svg>
+      </div>
+    </figure>
   );
-};
-
-export default CPMDiagram;
-
+}

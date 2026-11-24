@@ -1,72 +1,61 @@
-import React from 'react';
-import { Card, Space } from 'antd';
-import DynamicTableContent from './DynamicTable/DynamicTableContent';
+import { Ref } from 'react';
+import { PartyLabel } from './DynamicTable/DynamicTableContent';
+import { Currency, TransportDraft, TransportResult, formatMoney, formatQuantity } from './DynamicTable/transport';
 
 type FinalTableProps = {
-  dataSource: any[];
-  columns: any[];
-  receivedData: any;
-  currency: string;
+  draft: TransportDraft;
+  result: TransportResult;
+  currency: Currency;
+  headingRef: Ref<HTMLHeadingElement>;
 };
 
-const FinalTable: React.FC<FinalTableProps> = ({ dataSource, columns, receivedData, currency }) => {
-  const totalCost = receivedData.totalCost;
-  const totalProfil = receivedData.totalProfit;
-  const totalRevenue = receivedData.totalRevenue;
-  const profitTable = receivedData.profitTable || [];
-  const transportationTable = receivedData.transportationTable || [];
-
-  const newColumns = columns.map((column: any) => {
-    const newCol = { ...column } as any;
-    newCol.editable = false;
-    if (newCol.render) {
-      newCol.render = (text: any, record: any) => {
-        return (
-          <Space>
-            Dostawca {record.key} ({text})
-          </Space>
-        );
-      };
-    }
-
-    return newCol;
-  });
-
-  const newDataSource = dataSource.map((row: any, ix: number) => {
-    const resultRow = profitTable[ix] || [];
-    const resultRowT = transportationTable[ix] || [];
-    let newRow = { ...row } as any;
-    let newRowT = { ...row } as any;
-    resultRowT.forEach((value: any, ix2: number) => {
-      newRowT['dynamic' + (ix2 + 1)] += value;
-    });
-    resultRow.forEach((value: any, ix2: number) => {
-      newRow['dynamic' + (ix2 + 1)] = `${resultRowT[ix2]} [${value} ${currency}]`;
-    });
-    return newRow;
-  });
+export default function FinalTable({ draft, result, currency, headingRef }: FinalTableProps) {
+  const totals = [
+    ['Zysk', result.totalProfit],
+    ['Koszt całkowity', result.totalCost],
+    ['Przychód', result.totalRevenue],
+  ] as const;
 
   return (
-    <Space direction='vertical' size='middle' style={{}} align="center">
-      <DynamicTableContent
-        dataSource={newDataSource}
-        columns={newColumns}
-      />
-      <Space>
-        <Card title="Legenda" style={{ width: 400, margin: 'auto' }}>
-          <p>() - Jednostkowe koszty zakupu dla dostawców lub ceny sprzedaży dla odbiorców</p>
-          <p>[] - Zysk jednostkowy</p>
-          <p>Liczby bez nawiasów to ilość towaru transportowanego</p>
-        </Card>
-        <Card title="Tabela Transportu" style={{ width: 400, margin: 'auto' }}>
-          <p>Koszt całkowity = {totalCost} {currency}</p>
-          <p>Zysk = {totalProfil} {currency}</p>
-          <p>Przychód = {totalRevenue} {currency}</p>
-        </Card>
-      </Space>
-    </Space >
+    <section className="panel transport-result" aria-labelledby="transport-result-title">
+      <div className="panel-header">
+        <h2 className="panel-title" id="transport-result-title" ref={headingRef} tabIndex={-1}>Plan transportu</h2>
+      </div>
+      <dl className="transport-totals">
+        {totals.map(([label, amount]) => (
+          <div key={label}>
+            <dt className="muted">{label}</dt>
+            <dd>{formatMoney(amount, currency)}</dd>
+          </div>
+        ))}
+      </dl>
+      <div className="table-scroll" tabIndex={0} role="region" aria-label="Ilość i zysk na każdej trasie">
+        <table className="data-table transport-table">
+          <thead>
+            <tr>
+              <th scope="col">Trasy</th>
+              {draft.recipients.map((recipient) => (
+                <th key={recipient.id} scope="col"><PartyLabel party={recipient} kind="recipient" currency={currency} /></th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {draft.suppliers.map((supplier, row) => (
+              <tr key={supplier.id}>
+                <th scope="row"><PartyLabel party={supplier} kind="supplier" currency={currency} /></th>
+                {draft.recipients.map(({ id }, column) => (
+                  <td key={id}>
+                    <strong className="transport-route-quantity">{formatQuantity(result.transportationTable[row][column])}</strong>
+                    <span className="visually-hidden"> jednostek, zysk </span>
+                    <span className="transport-route-profit muted">{formatMoney(result.profitTable[row][column], currency)}</span>
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="panel-footer muted">Ilość i zysk na każdej trasie</div>
+    </section>
   );
-};
-
-export default FinalTable;
-
+}

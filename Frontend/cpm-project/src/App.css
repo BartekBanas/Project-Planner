@@ -1,36 +1,205 @@
-.App {
-  display: inline-block;
-  min-height: 100vh;
-  width: 100%;
-  padding: 20px 0;
+.app-shell {
+  --page-gutter: 40px;
+  display: flex;
+  min-height: 100svh;
   flex-direction: column;
+}
+
+.app-width {
+  width: min(100%, 1360px);
+  margin-inline: auto;
+  padding-left: max(var(--page-gutter), env(safe-area-inset-left, 0px));
+  padding-right: max(var(--page-gutter), env(safe-area-inset-right, 0px));
+}
+
+.app-bar {
+  padding-top: env(safe-area-inset-top, 0px);
+  border-bottom: 1px solid var(--border);
+  background: #131313;
+}
+
+.app-bar-inner {
+  display: flex;
+  min-height: 76px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.app-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.app-brand img {
+  display: block;
+  flex: none;
+}
+
+.method-picker {
+  display: flex;
+  min-width: 0;
+  margin: 0;
+  padding: 4px;
+  gap: 4px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--canvas);
+}
+
+.method-option {
+  position: relative;
+  display: block;
+  min-width: 0;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.method-option > span {
+  display: flex;
+  min-height: 36px;
   align-items: center;
   justify-content: center;
-  font-size: calc(10px + 2vmin);
+  padding: 4px 16px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--secondary);
+  font-size: 13px;
+  font-weight: 500;
   text-align: center;
-  color: white;
-  background-image: url("./images/backg.jpg");
-  background-repeat: no-repeat;
-  background-size: cover;
+  transition: background-color 140ms var(--ease-out), color 140ms var(--ease-out);
 }
 
-.App-logo {
-  height: 15vmin;
-  pointer-events: none;
+.method-option input:checked + span {
+  border-color: #424242;
+  background: #2b2b2b;
+  color: var(--text);
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
+.method-option input:focus-visible + span {
+  outline: 2px solid var(--text);
+  outline-offset: -2px;
+}
+
+.method-option:active > span {
+  background: #343434;
+}
+
+.app-main {
+  flex: 1;
+  padding-top: 48px;
+  padding-bottom: 56px;
+}
+
+.workspace-heading {
+  margin-bottom: 28px;
+}
+
+.workspace-heading h1 {
+  margin: 0;
+  font-size: clamp(2rem, 3.5vw, 3rem);
+  font-weight: 600;
+  letter-spacing: -.04em;
+  line-height: 1.12;
+}
+
+.workspace-heading p {
+  max-width: 65ch;
+  margin: 12px 0 0;
+  color: var(--secondary);
+  font-size: 15px;
+}
+
+.app-footer {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.app-footer-inner {
+  display: flex;
+  min-height: 64px;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 16px;
+  padding-block: 20px;
+}
+
+.app-credits summary {
+  cursor: pointer;
+}
+
+.app-credits ul {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style-type: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .method-option:hover input:not(:checked) + span {
+    background: var(--surface);
+    color: var(--text);
+  }
+
+  .app-credits summary:hover {
+    color: var(--text);
   }
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
+@media (max-width: 920px) {
+  .app-shell {
+    --page-gutter: 24px;
   }
 
-  to {
-    transform: rotate(360deg);
+  .app-main {
+    padding-block: 36px;
+  }
+}
+
+@media (max-width: 520px) {
+  .app-shell {
+    --page-gutter: 16px;
+  }
+
+  .app-bar-inner {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding-block: 12px;
+  }
+
+  .method-option {
+    flex: 1;
+  }
+
+  .method-option > span {
+    padding-inline: 8px;
+  }
+
+  .app-main {
+    padding-top: 28px;
+  }
+
+  .workspace-heading {
+    margin-bottom: 20px;
+  }
+}
+
+@media (pointer: coarse) {
+  .method-option > span {
+    min-height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .method-option > span {
+    transition: none;
   }
 }
