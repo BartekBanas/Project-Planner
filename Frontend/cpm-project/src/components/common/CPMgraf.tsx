@@ -103,8 +103,10 @@ export default function CPMDiagram({ solution }: { solution: CpmSolution }) {
   const svg = useRef<SVGSVGElement>(null);
   const drag = useRef<Drag | null>(null);
   const [positions, setPositions] = useState<Record<number, Point>>({});
+  const [selectedId, setSelectedId] = useState<number | null>(null);
   const nodes = layout.nodes.map((node) => ({ ...node, ...positions[node.id] }));
   const byId = new Map(nodes.map((node) => [node.id, node]));
+  const selectedNode = nodes.find((node) => node.id === selectedId) ?? nodes.find((node) => node.rank === 0);
   const arrows = solution.activities.flatMap((activity) => {
     const source = byId.get(activity.sequence[0]);
     const target = byId.get(activity.sequence[1]);
@@ -131,6 +133,7 @@ export default function CPMDiagram({ solution }: { solution: CpmSolution }) {
   function startDrag(event: PointerEvent<SVGGElement>, node: GraphNode) {
     const origin = svgPoint(event);
     if (event.button === 0 && origin) {
+      setSelectedId(node.id);
       drag.current = { id: node.id, origin, node };
       event.currentTarget.setPointerCapture(event.pointerId);
     }
@@ -215,6 +218,8 @@ export default function CPMDiagram({ solution }: { solution: CpmSolution }) {
               tabIndex={0}
               role="group"
               aria-label={`Zdarzenie ${node.id}, najwcześniej ${node.earliestTime}, najpóźniej ${node.latestTime}, rezerwa ${node.timeReserve}`}
+              data-selected={selectedNode?.id === node.id}
+              onFocus={() => setSelectedId(node.id)}
               onPointerDown={(event) => startDrag(event, node)}
               onPointerMove={(event) => moveDrag(event, node.id)}
               onLostPointerCapture={() => { drag.current = null; }}
@@ -227,6 +232,14 @@ export default function CPMDiagram({ solution }: { solution: CpmSolution }) {
           ))}
         </svg>
       </div>
+      {selectedNode && (
+        <dl className="cpm-node-details" aria-label="Terminy wybranego zdarzenia">
+          <div><dt>Zdarzenie</dt><dd>{selectedNode.id}</dd></div>
+          <div><dt>Najwcześniej</dt><dd>{selectedNode.earliestTime}</dd></div>
+          <div><dt>Najpóźniej</dt><dd>{selectedNode.latestTime}</dd></div>
+          <div><dt>Rezerwa</dt><dd>{selectedNode.timeReserve}</dd></div>
+        </dl>
+      )}
     </figure>
   );
 }

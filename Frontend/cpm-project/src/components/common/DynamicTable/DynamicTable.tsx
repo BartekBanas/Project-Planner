@@ -60,7 +60,7 @@ function PartyEditor({ disabled, onAdd }: PartyEditorProps) {
       </div>
       <fieldset className="panel-body transport-entry-fields" disabled={disabled}>
         <legend className="visually-hidden">Dane uczestnika</legend>
-        <fieldset className="transport-segmented">
+        <fieldset className="choice-group">
           <legend className="visually-hidden">Typ uczestnika</legend>
           <label>
             <input type="radio" name="party-kind" value="supplier" checked={kind === 'supplier'} onChange={() => setKind('supplier')} />
@@ -74,14 +74,13 @@ function PartyEditor({ disabled, onAdd }: PartyEditorProps) {
         <div className="form-grid transport-quantity-price">
           <label className="field">
             <span>{labels.quantity}</span>
-            <input ref={quantityInput} type="number" placeholder="0" min="1" max={maxQuantity} step="1" inputMode="numeric" required />
+            <input ref={quantityInput} type="number" min="1" max={maxQuantity} step="1" inputMode="numeric" required />
           </label>
           <label className="field">
             <span>{labels.price}</span>
             <input
               ref={priceInput}
               type="number"
-              placeholder="0,00"
               min="0"
               step="any"
               inputMode="decimal"
@@ -93,7 +92,7 @@ function PartyEditor({ disabled, onAdd }: PartyEditorProps) {
           </label>
         </div>
         {priceError && <p className="inline-error" id="transport-price-error" role="alert">Podaj cenę większą od zera.</p>}
-        <button className="button transport-add" type="submit">
+        <button className="button button-primary" type="submit">
           <Icon name="plus" /> {kind === 'supplier' ? 'Dodaj dostawcę' : 'Dodaj odbiorcę'}
         </button>
       </fieldset>
@@ -218,7 +217,7 @@ export default function DynamicTable() {
             </>
           )}
           <div className="panel-footer transport-matrix-footer">
-            <p className="muted">{hasRoutes ? 'Wpisz jednostkowy koszt każdej trasy' : 'Wymagany dostawca i odbiorca'}</p>
+            {hasRoutes && <p className="muted">Wpisz jednostkowy koszt każdej trasy</p>}
             <button className="button button-primary" type="submit" disabled={!hasRoutes || solving}>
               {solving ? 'Obliczanie…' : 'Oblicz plan'}
             </button>
@@ -234,7 +233,7 @@ export default function DynamicTable() {
             <h2 className="panel-title" id="transport-currency-title">Waluta</h2>
           </div>
           <div className="panel-body">
-            <fieldset className="transport-segmented" aria-labelledby="transport-currency-title">
+            <fieldset className="choice-group" aria-labelledby="transport-currency-title">
               {currencies.map((option) => (
                 <label key={option}>
                   <input type="radio" name="transport-currency" value={option} checked={currency === option} onChange={() => setCurrency(option)} />

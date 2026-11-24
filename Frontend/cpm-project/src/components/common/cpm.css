@@ -257,6 +257,10 @@
   stroke-width: 2;
 }
 
+.cpm-graph-node[data-selected='true'] ellipse {
+  fill: var(--text);
+}
+
 .cpm-graph-node:focus-visible ellipse {
   stroke: var(--text);
   stroke-width: 4;
@@ -266,6 +270,36 @@
   fill: var(--text);
   font: 13px var(--mono);
   pointer-events: none;
+}
+
+.cpm-graph-node[data-selected='true'] text {
+  fill: var(--canvas);
+}
+
+.cpm-node-details {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 24px;
+  row-gap: 8px;
+  margin: 0;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+}
+
+.cpm-node-details > div {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.cpm-node-details dt {
+  color: var(--secondary);
+}
+
+.cpm-node-details dd {
+  margin: 0;
+  font-family: var(--mono);
 }
 
 .cpm-critical-label {

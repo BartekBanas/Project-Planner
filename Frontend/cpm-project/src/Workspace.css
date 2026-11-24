@@ -165,6 +165,68 @@
   gap: 8px;
 }
 
+.choice-group {
+  display: flex;
+  min-width: 0;
+  margin: 0;
+  padding: 4px;
+  gap: 4px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--canvas);
+}
+
+.choice-group > label {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.choice-group input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  clip-path: inset(50%);
+}
+
+.choice-group span {
+  display: grid;
+  min-height: 36px;
+  place-items: center;
+  padding: 4px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--secondary);
+  font-size: 13px;
+  font-weight: 500;
+  text-align: center;
+  transition: background-color 140ms var(--ease-out), color 140ms var(--ease-out);
+}
+
+.choice-group input:checked + span {
+  border-color: #424242;
+  background: #2b2b2b;
+  color: var(--text);
+}
+
+.choice-group input:focus-visible + span {
+  outline: 2px solid var(--text);
+  outline-offset: -2px;
+}
+
+.choice-group label:active span {
+  background: var(--surface-hover);
+}
+
+.choice-group input:disabled + span {
+  opacity: 0.55;
+}
+
 .button {
   display: inline-flex;
   min-height: 40px;
@@ -204,6 +266,11 @@
 }
 
 @media (hover: hover) and (pointer: fine) {
+  .choice-group label:hover input:not(:checked, :disabled) + span {
+    background: var(--surface);
+    color: var(--text);
+  }
+
   .button:hover:not(:disabled) {
     border-color: #747474;
     background: var(--surface-hover);
@@ -259,6 +326,7 @@
 }
 
 @media (pointer: coarse) {
+  .choice-group span,
   .button {
     min-height: 44px;
   }
@@ -269,6 +337,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .choice-group span,
   .button {
     transition: none;
   }

@@ -138,17 +138,19 @@
   justify-content: space-between;
 }
 
-.transport-matrix-footer p,
-.transport-solve-error {
+.transport-matrix-footer p {
   margin: 0;
+}
+
+.transport-matrix-footer button {
+  margin-inline-start: auto;
 }
 
 .transport-solve-error {
   margin: 0 20px 16px;
 }
 
-.transport-entry-fields,
-.transport-segmented {
+.transport-entry-fields {
   min-width: 0;
   margin: 0;
   border: 0;
@@ -167,71 +169,8 @@
   width: 100%;
 }
 
-.transport-segmented {
-  display: flex;
-  gap: 4px;
-  padding: 4px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: var(--canvas);
-}
-
-.transport-segmented label {
-  position: relative;
-  flex: 1;
-  min-width: 0;
-  cursor: pointer;
-  touch-action: manipulation;
-  -webkit-user-select: none;
-  user-select: none;
-}
-
-.transport-segmented input {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  margin: 0;
-  clip-path: inset(50%);
-}
-
-.transport-segmented span {
-  display: grid;
-  min-height: 36px;
-  place-items: center;
-  padding: 4px;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  color: var(--secondary);
-  font-size: 13px;
-  font-weight: 500;
-  text-align: center;
-}
-
-.transport-segmented input:checked + span {
-  border-color: var(--border);
-  background: #2b2b2b;
-  color: var(--text);
-}
-
-.transport-segmented input:focus-visible + span {
-  outline: 2px solid var(--text);
-  outline-offset: -2px;
-}
-
-.transport-segmented label:active span {
-  background: var(--surface-hover);
-}
-
-.transport-segmented input:disabled + span {
-  opacity: 0.55;
-}
-
 .transport-entry-fields .inline-error {
   margin: 0;
-}
-
-.transport-add {
-  width: 100%;
 }
 
 .transport-totals {
@@ -276,15 +215,7 @@
   font-weight: 500;
 }
 
-@media (hover: hover) and (pointer: fine) {
-  .transport-segmented label:hover input:not(:checked, :disabled) + span {
-    background: var(--surface);
-    color: var(--text);
-  }
-}
-
 @media (pointer: coarse) {
-  .transport-segmented span,
   .transport-cost {
     min-height: 44px;
   }

@@ -34,12 +34,11 @@ export default function App() {
             <span>Project Planner</span>
           </div>
 
-          <fieldset className="method-picker">
+          <fieldset className="choice-group method-picker">
             <legend className="visually-hidden">Metoda obliczeń</legend>
             {methodOptions.map((option) => (
-              <label className="method-option" key={option}>
+              <label key={option}>
                 <input
-                  className="visually-hidden"
                   type="radio"
                   name="planner-method"
                   value={option}
