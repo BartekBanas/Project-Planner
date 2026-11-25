@@ -1,14 +1,232 @@
-.editable-cell {
-	position: relative;
+.transport-main,
+.transport-editor {
+  display: grid;
+  min-width: 0;
+  align-content: start;
+  gap: 16px;
 }
 
-.editable-cell-value-wrap {
-	padding: 5px 12px;
-	cursor: pointer;
+.transport-panel-heading {
+  flex-wrap: wrap;
+  justify-content: space-between;
 }
 
-.editable-row:hover .editable-cell-value-wrap {
-	border: 1px solid #D9D9D9;
-	border-radius: 2px;
-	padding: 4px 11px;
+.transport-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  font-size: 12px;
+}
+
+.transport-counts strong {
+  margin-inline-start: 4px;
+  color: var(--text);
+  font-family: var(--mono);
+  font-weight: 500;
+}
+
+.transport-empty {
+  min-height: 248px;
+  padding: 24px 16px;
+}
+
+.transport-empty-icon {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--secondary);
+  font-size: 18px;
+}
+
+.transport-partial-list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--border);
+  list-style: none;
+}
+
+.transport-partial-list li {
+  padding: 8px 20px;
+}
+
+.transport-partial-list li + li {
+  border-top: 1px solid var(--border);
+}
+
+.transport-party {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.transport-party-name,
+.transport-party-meta {
+  display: block;
+}
+
+.transport-party-name {
+  color: var(--text);
+  font-weight: 500;
+}
+
+.transport-party-meta {
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+.transport-party-meta > span {
+  margin-inline: 2px;
+}
+
+.transport-remove.button-icon {
+  flex: none;
+  border-color: transparent;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.transport-table {
+  min-width: 100%;
+}
+
+.transport-table th,
+.transport-table td {
+  min-width: 144px;
+}
+
+.transport-table th + th,
+.transport-table td {
+  border-inline-start: 1px solid var(--border);
+}
+
+.transport-cost {
+  width: 100%;
+  min-width: 96px;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--control-border);
+  border-radius: 8px;
+  appearance: textfield;
+  background: var(--canvas);
+  color: var(--text);
+  font-family: var(--mono);
+}
+
+.transport-cost::-webkit-inner-spin-button,
+.transport-cost::-webkit-outer-spin-button {
+  margin: 0;
+  appearance: none;
+}
+
+.transport-cost:disabled {
+  opacity: 0.55;
+}
+
+.transport-matrix-footer {
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.transport-matrix-footer p {
+  margin: 0;
+}
+
+.transport-matrix-footer button {
+  margin-inline-start: auto;
+}
+
+.transport-solve-error {
+  margin: 0 20px 16px;
+}
+
+.transport-entry-fields {
+  min-width: 0;
+  margin: 0;
+  border: 0;
+}
+
+.transport-entry-fields {
+  display: grid;
+  gap: 16px;
+}
+
+.transport-quantity-price {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.transport-quantity-price input {
+  width: 100%;
+}
+
+.transport-entry-fields .inline-error {
+  margin: 0;
+}
+
+.transport-totals {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.transport-totals > div {
+  min-width: 0;
+  padding: 16px 20px;
+}
+
+.transport-totals > div + div {
+  border-inline-start: 1px solid var(--border);
+}
+
+.transport-totals dt,
+.transport-route-profit {
+  font-size: 12px;
+}
+
+.transport-totals dd {
+  margin: 4px 0 0;
+  font-family: var(--mono);
+  font-size: clamp(1rem, 2.5vw, 1.5rem);
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.transport-route-quantity,
+.transport-route-profit {
+  display: block;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.transport-route-quantity {
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+@media (pointer: coarse) {
+  .transport-cost {
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 520px) {
+  .transport-empty {
+    min-height: 168px;
+  }
+
+  .transport-totals > div {
+    padding: 12px;
+  }
 }

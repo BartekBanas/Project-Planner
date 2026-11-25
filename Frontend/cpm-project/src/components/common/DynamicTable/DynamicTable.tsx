@@ -1,231 +1,249 @@
-import React, { useState, useEffect } from 'react';
-import { Button, Space, Drawer, notification, Radio, Card } from 'antd';
-import { DeleteTwoTone } from '@ant-design/icons';
-import { isEmpty } from 'lodash';
 import axios from 'axios';
-
-import './DynamicTable.css';
-import DynamicTableContent from './DynamicTableContent';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 import FinalTable from '../finalTable';
+import Icon from '../Icon';
+import DynamicTableContent, { PartialMatrix } from './DynamicTableContent';
+import { Currency, PartyKind, TransportDraft, TransportParty, TransportResult, partyLabels } from './transport';
+import './DynamicTable.css';
 
-const newColumnProps = {
-  title: '',
-  dataIndex: 'new',
-  width: 170,
-  editable: true,
+const currencies: Currency[] = ['PLN', 'USD', 'EUR', 'GBP'];
+const transportUrl = 'https://localhost:44363/api/TP';
+const maxQuantity = 2147483647;
+
+function getValidationMessage(payload: unknown): string | undefined {
+  if (!Array.isArray(payload)) return undefined;
+
+  return payload.find((issue: unknown): issue is { errorMessage: string } => (
+    typeof issue === 'object'
+    && issue !== null
+    && 'errorMessage' in issue
+    && typeof issue.errorMessage === 'string'
+  ))?.errorMessage;
+}
+
+type PartyEditorProps = {
+  disabled: boolean;
+  onAdd: (kind: PartyKind, quantity: number, price: number) => void;
 };
 
-type DynamicTableProps = {
-  eventFormMP: any;
-};
+function PartyEditor({ disabled, onAdd }: PartyEditorProps) {
+  const [kind, setKind] = useState<PartyKind>('supplier');
+  const [priceError, setPriceError] = useState(false);
+  const quantityInput = useRef<HTMLInputElement>(null);
+  const priceInput = useRef<HTMLInputElement>(null);
+  const labels = partyLabels[kind];
 
-const DynamicTable: React.FC<DynamicTableProps> = ({ eventFormMP }) => {
-  const [dataSource, setDataSource] = useState<any[]>([]);
-  const [dataSourceS, setDataSourceS] = useState<any[]>([]);
-  const [dataSourceD, setDataSourceD] = useState<any[]>([]);
-  const [count, setCount] = useState<number>(0);
-  const [open, setOpen] = useState<boolean>(false);
-  const [currency, setCurrency] = useState<string>('PLN');
-
-  const [receivedData, setReceivedData] = useState<any>({});
-
-  const showDrawer = () => {
-    setOpen(true);
-  };
-
-  const onClose = () => {
-    setOpen(false);
-  };
-
-  useEffect(() => {
-    if (isEmpty(eventFormMP)) {
-      return;
-    }
-    if (!isEmpty(eventFormMP.demand)) {
-      setDataSourceD((dataSourceD) => {
-        return [...dataSourceD, { ...eventFormMP, key: count }];
-      });
-      handleAddCol();
-    } else {
-      setDataSourceS((dataSourceS) => {
-        return [...dataSourceS, { ...eventFormMP, key: count }];
-      });
-      handleAddRow();
-    }
-    setCount((c) => c + 1);
-  }, [eventFormMP]);
-
-  const [columns, setColumns] = useState<any[]>([
-    {
-      title: '',
-      dataIndex: 'supply',
-      rowScope: 'row',
-      align: 'center',
-      width: 80,
-      fixed: 'left',
-      render: (text: any, record: any) => {
-        return (
-          <Space>
-            Dostawca {record.key} ({text})
-            <span onClick={() => handleDeleteRow(record.key)} style={{ cursor: 'pointer' }}>
-              {React.createElement(DeleteTwoTone as any)}
-            </span>
-          </Space>
-        );
-      },
-    },
-    {
-      title: '',
-      dataIndex: 'padding',
-    },
-  ]);
-
-  const handleAddRow = () => {
-    setDataSource((dataSource) => {
-      const last = dataSource.slice(-1);
-      const newData = {
-        key: (last[0]?.key || 0) + 1,
-        supply: eventFormMP.supply,
-      } as any;
-      return [...dataSource, newData];
-    });
-  };
-
-  const handleAddCol = () => {
-    setColumns((columns) => {
-      const newColumns = [...columns];
-      const keepLast = newColumns.pop();
-      const last = newColumns.slice(-1);
-      const id = (last[0]?.key || 0) + 1;
-      const demand = eventFormMP.demand;
-      const dataIndex = `dynamic${id}`;
-
-      return [
-        ...newColumns,
-        {
-          ...newColumnProps,
-          title: () => {
-            return (
-              <Space>
-                Odbiorca {id} ({demand})
-                <span onClick={() => handleDeleteCol(dataIndex)} style={{ cursor: 'pointer' }}>
-                  {React.createElement(DeleteTwoTone as any)}
-                </span>
-              </Space>
-            );
-          },
-          dataIndex,
-          key: id,
-        },
-        keepLast,
-      ];
-    });
-  };
-
-  const handleCellSave = (row: any) => {
-    setDataSource((dataSource) => {
-      const newData = [...dataSource];
-      const index = newData.findIndex((item) => row.key === item.key);
-      const item = newData[index];
-
-      newData.splice(index, 1, {
-        ...item,
-        ...row,
-      });
-
-      return newData;
-    });
-  };
-
-  const handleDeleteRow = (key: any) => {
-    setDataSource((dataSource) => {
-      return [...dataSource].filter((item) => item.key !== key);
-    });
-  };
-
-  const handleDeleteCol = (dataIndex: string) => {
-    setColumns((columns) => {
-      return [...columns].filter((item) => item.dataIndex !== dataIndex);
-    });
-    setDataSource((dataSource) => {
-      return [...dataSource].map((row) => { delete row[dataIndex]; return row; });
-    });
-  };
-
-  const sendData = (event: React.FormEvent) => {
+  function handleAdd(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const quantityField = quantityInput.current;
+    const priceField = priceInput.current;
+    if (!quantityField || !priceField) return;
 
-    if (isEmpty(dataSource || eventFormMP)) {
-      notification.warning({ message: 'Warning', description: 'Wypełnij forma' });
+    const quantity = quantityField.valueAsNumber;
+    const price = priceField.valueAsNumber;
+    if (price <= 0) {
+      setPriceError(true);
+      priceField.focus();
       return;
     }
 
-    const Suppliers = dataSourceS.map((supp) => {
-      return {
-        Supply: supp.supply,
-        Cost: supp.cost,
-      };
-    });
-
-    const Recipients = dataSourceD.map((reci) => {
-      return {
-        Demand: reci.demand,
-        Cost: reci.cost,
-      };
-    });
-
-    const TransportCost = dataSource.map((tranc) => {
-      return (
-        columns.slice(1, -1).map((column) => {
-          const dataIndex = column.dataIndex;
-          return tranc[dataIndex];
-        })
-      );
-    });
-
-    axios.post('https://localhost:44363/api/TP', { Suppliers, Recipients, TransportCost })
-      .then(response => {
-        setReceivedData(response.data);
-        console.log(response.data);
-        showDrawer();
-      })
-      .catch(error => { });
-  };
+    onAdd(kind, quantity, price);
+    quantityField.value = '';
+    priceField.value = '';
+    quantityField.focus();
+  }
 
   return (
-    <h1>
-      <Space direction="vertical">
-        <Card title="Waluta">
-          <Radio.Group value={currency} onChange={(e) => setCurrency(e.target.value)}>
-            <Radio.Button type="primary" value={'PLN'}>PLN</Radio.Button>
-            <Radio.Button type="primary" value={'$'}>$</Radio.Button>
-            <Radio.Button type="primary" value={'€'}>€</Radio.Button>
-            <Radio.Button type="primary" value={'£'}>£</Radio.Button>
-          </Radio.Group>
-        </Card>
-        <Button type="primary" onClick={sendData} style={{ marginBottom: 16 }}>
-          Zatwierdź
-        </Button>
-      </Space>
-      <Drawer
-        title="Wyniki"
-        size="large"
-        placement="bottom"
-        closable={true}
-        onClose={onClose}
-        open={open}
-      >
-        <FinalTable dataSource={dataSource} columns={columns} receivedData={receivedData} currency={currency} />
-      </Drawer>
-      <DynamicTableContent
-        dataSource={dataSource}
-        columns={columns}
-        handleCellSave={handleCellSave}
-        handleAddRow={handleAddRow}
-        handleAddCol={handleAddCol}
-      />
-    </h1 >
+    <form className="panel transport-entry" onSubmit={handleAdd} aria-labelledby="transport-entry-title">
+      <div className="panel-header">
+        <h2 className="panel-title" id="transport-entry-title">Add a supplier or recipient</h2>
+      </div>
+      <fieldset className="panel-body transport-entry-fields" disabled={disabled}>
+        <legend className="visually-hidden">Supplier or recipient details</legend>
+        <fieldset className="choice-group">
+          <legend className="visually-hidden">Party type</legend>
+          <label>
+            <input type="radio" name="party-kind" value="supplier" checked={kind === 'supplier'} onChange={() => setKind('supplier')} />
+            <span>{partyLabels.supplier.name}</span>
+          </label>
+          <label>
+            <input type="radio" name="party-kind" value="recipient" checked={kind === 'recipient'} onChange={() => setKind('recipient')} />
+            <span>{partyLabels.recipient.name}</span>
+          </label>
+        </fieldset>
+        <div className="form-grid transport-quantity-price">
+          <label className="field">
+            <span>{labels.quantity}</span>
+            <input ref={quantityInput} type="number" min="1" max={maxQuantity} step="1" inputMode="numeric" required />
+          </label>
+          <label className="field">
+            <span>{labels.price}</span>
+            <input
+              ref={priceInput}
+              type="number"
+              min="0"
+              step="any"
+              inputMode="decimal"
+              required
+              aria-invalid={priceError || undefined}
+              aria-describedby={priceError ? 'transport-price-error' : undefined}
+              onChange={() => setPriceError(false)}
+            />
+          </label>
+        </div>
+        {priceError && <p className="inline-error" id="transport-price-error" role="alert">Enter a price greater than zero.</p>}
+        <button className="button button-primary" type="submit">
+          <Icon name="plus" /> Add {kind}
+        </button>
+      </fieldset>
+    </form>
   );
-};
-export default DynamicTable;
+}
 
+export default function DynamicTable() {
+  const [draft, setDraft] = useState<TransportDraft>({ suppliers: [], recipients: [] });
+  const [currency, setCurrency] = useState<Currency>('PLN');
+  const [result, setResult] = useState<TransportResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [solving, setSolving] = useState(false);
+  const nextId = useRef({ supplier: 1, recipient: 1 });
+  const pendingRequest = useRef<AbortController | null>(null);
+  const resultHeading = useRef<HTMLHeadingElement | null>(null);
+  const { suppliers, recipients } = draft;
+  const hasRoutes = suppliers.length > 0 && recipients.length > 0;
+  const isEmpty = suppliers.length === 0 && recipients.length === 0;
+  const missingParty = suppliers.length === 0 ? 'supplier' : 'recipient';
+
+  useEffect(() => () => pendingRequest.current?.abort(), []);
+  useEffect(() => { if (result) resultHeading.current?.focus(); }, [result]);
+
+  function updateDraft(update: (current: TransportDraft) => TransportDraft) {
+    setDraft(update);
+    setResult(null);
+    setError(null);
+  }
+
+  function addParty(kind: PartyKind, quantity: number, price: number) {
+    const party: TransportParty = { id: nextId.current[kind]++, quantity, price };
+    updateDraft((current) => kind === 'supplier'
+      ? { ...current, suppliers: [...current.suppliers, { ...party, routeCosts: {} }] }
+      : { ...current, recipients: [...current.recipients, party] });
+  }
+
+  function removeParty(kind: PartyKind, id: number) {
+    updateDraft((current) => {
+      if (kind === 'supplier') {
+        return { ...current, suppliers: current.suppliers.filter((supplier) => supplier.id !== id) };
+      }
+
+      return {
+        recipients: current.recipients.filter((recipient) => recipient.id !== id),
+        suppliers: current.suppliers.map((supplier) => {
+          const routeCosts = { ...supplier.routeCosts };
+          delete routeCosts[id];
+          return { ...supplier, routeCosts };
+        }),
+      };
+    });
+  }
+
+  function updateRoute(supplierId: number, recipientId: number, value: string) {
+    updateDraft((current) => ({
+      ...current,
+      suppliers: current.suppliers.map((supplier) => supplier.id === supplierId
+        ? { ...supplier, routeCosts: { ...supplier.routeCosts, [recipientId]: value } }
+        : supplier),
+    }));
+  }
+
+  async function solve(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!hasRoutes || pendingRequest.current) return;
+
+    const controller = new AbortController();
+    pendingRequest.current = controller;
+    setSolving(true);
+    setError(null);
+
+    try {
+      const { data } = await axios.post<TransportResult>(transportUrl, {
+        Suppliers: suppliers.map(({ quantity, price }) => ({ Supply: quantity, Cost: price })),
+        Recipients: recipients.map(({ quantity, price }) => ({ Demand: quantity, Cost: price })),
+        TransportCost: suppliers.map(({ routeCosts }) => recipients.map(({ id }) => Number(routeCosts[id]))),
+      }, { signal: controller.signal });
+      if (!controller.signal.aborted) setResult(data);
+    } catch (requestError) {
+      if (controller.signal.aborted) return;
+
+      const reply = axios.isAxiosError<unknown>(requestError) ? requestError.response : undefined;
+      setError(reply?.status === 400
+        ? getValidationMessage(reply.data) ?? 'Check the supply, demand, and costs for all routes.'
+        : 'Could not calculate the plan. Check the server connection and try again.');
+    } finally {
+      pendingRequest.current = null;
+      if (!controller.signal.aborted) setSolving(false);
+    }
+  }
+
+  return (
+    <div className="workspace-grid">
+      <div className="transport-main">
+        <form className="panel transport-matrix" aria-labelledby="transport-matrix-title" onSubmit={solve}>
+          <div className="panel-header transport-panel-heading">
+            <h2 className="panel-title" id="transport-matrix-title">Transport costs</h2>
+            <div className="transport-counts muted" aria-live="polite">
+              <span>Suppliers <strong>{suppliers.length}</strong></span>
+              <span>Recipients <strong>{recipients.length}</strong></span>
+            </div>
+          </div>
+          {hasRoutes ? (
+            <DynamicTableContent
+              draft={draft}
+              currency={currency}
+              disabled={solving}
+              onRemove={removeParty}
+              onRouteChange={updateRoute}
+            />
+          ) : (
+            <>
+              <div className="empty-state transport-empty">
+                <span className="transport-empty-icon" aria-hidden="true"><Icon name="table" size={18} /></span>
+                <h3>{isEmpty ? 'No routes yet' : `Add a ${missingParty}`}</h3>
+                <p className="muted">{isEmpty
+                  ? 'Add a supplier and a recipient to enter route costs.'
+                  : 'The cost matrix appears once you have both a supplier and a recipient.'}</p>
+              </div>
+              {!isEmpty && <PartialMatrix draft={draft} currency={currency} onRemove={removeParty} />}
+            </>
+          )}
+          <div className="panel-footer transport-matrix-footer">
+            {hasRoutes && <p className="muted">Enter the cost per unit for each route</p>}
+            <button className="button button-primary" type="submit" disabled={!hasRoutes || solving}>
+              {solving ? 'Calculating…' : 'Calculate plan'}
+            </button>
+          </div>
+          {error && <p className="inline-error transport-solve-error" role="alert">{error}</p>}
+        </form>
+        {result && <FinalTable draft={draft} result={result} currency={currency} headingRef={resultHeading} />}
+      </div>
+      <aside className="transport-editor" aria-label="Transport settings">
+        <PartyEditor onAdd={addParty} disabled={solving} />
+        <section className="panel">
+          <div className="panel-header">
+            <h2 className="panel-title" id="transport-currency-title">Currency</h2>
+          </div>
+          <div className="panel-body">
+            <fieldset className="choice-group" aria-labelledby="transport-currency-title">
+              {currencies.map((option) => (
+                <label key={option}>
+                  <input type="radio" name="transport-currency" value={option} checked={currency === option} onChange={() => setCurrency(option)} />
+                  <span>{option}</span>
+                </label>
+              ))}
+            </fieldset>
+          </div>
+        </section>
+      </aside>
+    </div>
+  );
+}
