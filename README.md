@@ -30,7 +30,7 @@ You need Node.js with npm and a .NET SDK. The API targets .NET 7.
 3. In a second terminal, start the frontend from the repository root.
 
    ```powershell
-   cd Frontend/cpm-project
+   cd Frontend/project-planner-frontend
    npm ci
    npm start
    ```
@@ -49,4 +49,4 @@ dotnet test "Backend/Project Planner/Project Planner.sln"
 
 If you use the .NET runtime override, set it in the test terminal too.
 
-See the [frontend command reference](Frontend/cpm-project/README.md) for type checking and production builds.
+See the [frontend command reference](Frontend/project-planner-frontend/README.md) for type checking and production builds.

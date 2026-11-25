@@ -6,7 +6,7 @@ See [Run locally](../../README.md#run-locally) for the API and frontend setup.
 
 ## Commands
 
-Run these commands from `Frontend/cpm-project`.
+Run these commands from `Frontend/project-planner-frontend`.
 
 | Command | Purpose |
 | --- | --- |
